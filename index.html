@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yazı Koçu</title>
+<style>
+:root{
+  --paper:#f2f5f8; --card:#ffffff; --ink:#18212b; --muted:#5d6b7a; --line:#d9e0e8; --line-soft:#e8edf2;
+  --primary:#2a3b6e; --primary-ink:#ffffff;
+  --c-ozgul:#b86e00; --c-ozgul-bg:rgba(184,110,0,.07);
+  --c-dolgu:#6a45a6; --c-dolgu-bg:rgba(106,69,166,.15);
+  --c-ritim:#1c5fb4;
+  --flash:rgba(255,214,10,.45);
+  --ui:"Avenir Next","Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+  --read:Charter,"Bitstream Charter","Sitka Text",Cambria,"Noto Serif",Georgia,serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#10161d; --card:#171f28; --ink:#e7edf3; --muted:#9aa8b6; --line:#2a3541; --line-soft:#212b35;
+    --primary:#9db4ff; --primary-ink:#0e1626;
+    --c-ozgul:#f0a63a; --c-ozgul-bg:rgba(240,166,58,.10);
+    --c-dolgu:#b79af0; --c-dolgu-bg:rgba(183,154,240,.20);
+    --c-ritim:#6fa8ff;
+    --flash:rgba(255,214,10,.30);
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 var(--ui)}
+button,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--c-ritim);outline-offset:2px;border-radius:4px}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 56px}
+.top h1{margin:0;font-size:clamp(30px,5vw,44px);letter-spacing:-.03em;line-height:1.05;font-weight:800}
+.top p{margin:10px 0 0;max-width:62ch;color:var(--muted)}
+.grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(290px,1fr);gap:28px;margin-top:26px;align-items:start}
+@media (max-width:880px){.grid{grid-template-columns:1fr}}
+.stage{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--line-soft);margin-bottom:14px}
+.toolbar label{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:14px}
+select{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+.spacer{flex:1}
+button{cursor:pointer;border-radius:6px;border:1px solid var(--line);background:var(--card);padding:8px 14px}
+button:hover{border-color:var(--muted)}
+button.primary{background:var(--primary);color:var(--primary-ink);border-color:var(--primary);font-weight:650}
+button.primary:hover{filter:brightness(1.08)}
+button.ghost{background:transparent}
+textarea{width:100%;min-height:340px;resize:vertical;border:1px solid var(--line);border-radius:8px;padding:16px;background:var(--paper);font-family:var(--read);font-size:18px;line-height:1.7}
+.actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:12px}
+.count{color:var(--muted);font-size:14px}
+.filters{display:flex;flex-wrap:wrap;gap:6px 14px;margin-left:auto}
+.filters label{display:flex;gap:6px;align-items:center;font-size:14px;cursor:pointer}
+.sw{display:inline-block;width:18px;height:12px;border-radius:2px}
+.sw.ozgul{border-bottom:3px dotted var(--c-ozgul);height:14px}
+.sw.dolgu{background:var(--c-dolgu-bg);border:1px solid var(--c-dolgu)}
+.sw.ritim{box-shadow:inset 0 -3px 0 var(--c-ritim);background:var(--paper)}
+#doc{margin-top:16px;font-family:var(--read);font-size:18px;line-height:1.85}
+.par{margin:0 0 1.15em;padding:2px 0 2px 14px;border-left:4px solid transparent;border-radius:2px;max-width:70ch}
+.par.par-flag{border-left-color:var(--c-ozgul);background:var(--c-ozgul-bg)}
+mark{background:none;color:inherit;cursor:pointer}
+mark.m-ozgul{text-decoration:underline dotted var(--c-ozgul);text-decoration-thickness:3px;text-underline-offset:5px}
+mark.m-dolgu{background:var(--c-dolgu-bg);border-radius:3px}
+mark.m-ritim{box-shadow:inset 0 -3px 0 var(--c-ritim)}
+.off-ozgul mark.m-ozgul{text-decoration:none}
+.off-ozgul .par.par-flag{border-left-color:transparent;background:none}
+.off-dolgu mark.m-dolgu{background:none}
+.off-ritim mark.m-ritim{box-shadow:none}
+.flash{animation:flash 1.3s ease-out}
+@keyframes flash{0%,35%{background-color:var(--flash)}100%{background-color:transparent}}
+@media (prefers-reduced-motion:reduce){.flash{animation:none;outline:3px solid var(--flash)}}
+.side{display:flex;flex-direction:column;gap:20px}
+.panel h2{margin:0 0 8px;font-size:17px;letter-spacing:-.01em}
+.facts{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.fact{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.fact b{display:block;font-size:22px;letter-spacing:-.02em;line-height:1.2}
+.fact span{font-size:13px;color:var(--muted)}
+.pm{display:grid;gap:6px}
+.pm button{display:grid;grid-template-columns:78px 1fr auto;gap:10px;align-items:center;text-align:left;padding:6px 10px}
+.bar{height:8px;border-radius:4px;background:var(--line-soft);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--c-ozgul)}
+.pm small{color:var(--muted);white-space:nowrap}
+.note{border-left:4px solid var(--c-ritim);background:var(--card);border-radius:0 8px 8px 0;padding:8px 12px;margin:0 0 8px;font-size:15px}
+.list{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.item{background:var(--card);border:1px solid var(--line);border-left-width:5px;border-radius:0 8px 8px 0;padding:10px 12px;cursor:pointer}
+.item[data-mod=ozgul]{border-left-color:var(--c-ozgul)}
+.item[data-mod=dolgu]{border-left-color:var(--c-dolgu)}
+.item[data-mod=ritim]{border-left-color:var(--c-ritim)}
+.item.hidden{display:none}
+.item .ex{font-family:var(--read);font-style:italic;color:var(--muted);font-size:15px;margin:0 0 4px;overflow-wrap:anywhere}
+.item .msg{margin:0;font-weight:650}
+.item .tip{margin:4px 0 0;color:var(--muted);font-size:15px}
+.chip{display:inline-block;font-size:12.5px;padding:1px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted);margin-left:6px;font-weight:500}
+.empty{color:var(--muted);background:var(--card);border:1px dashed var(--line);border-radius:8px;padding:14px}
+.honest{margin-top:28px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:15px;max-width:80ch}
+.honest summary{cursor:pointer;color:var(--ink);font-weight:650}
+.honest ul{padding-left:20px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Yazı Koçu</h1>
+    <p>Metnini daha somut ve daha ritimli hale getirmek için öneriler verir. Kimin yazdığını tespit etmez, kimseyi suçlamaz. Metnin tarayıcından dışarı çıkmaz.</p>
+  </header>
+
+  <main class="grid">
+    <section class="stage" aria-label="Metin alanı">
+      <div class="toolbar">
+        <label>Dil
+          <select id="lang"><option value="auto">Otomatik</option><option value="tr">Türkçe</option><option value="en">English</option></select>
+        </label>
+        <label>Hassasiyet
+          <select id="sens"><option value="rahat">Rahat</option><option value="normal" selected>Normal</option><option value="siki">Sıkı</option></select>
+        </label>
+        <span class="spacer"></span>
+        <button id="sample" class="ghost" type="button">Örnek metin</button>
+        <button id="clear" class="ghost" type="button">Temizle</button>
+      </div>
+
+      <div id="editView">
+        <textarea id="input" aria-label="Analiz edilecek metin" placeholder="Metnini buraya yapıştır. En az 40 kelime, tercihen birkaç paragraf."></textarea>
+        <div class="actions">
+          <button id="analyze" class="primary" type="button">Analiz et</button>
+          <span id="count" class="count">0 kelime</span>
+        </div>
+      </div>
+
+      <div id="resultView" hidden>
+        <div class="actions" style="margin-top:0">
+          <button id="back" class="ghost" type="button">Metni düzenle</button>
+          <div class="filters" role="group" aria-label="Gösterilecek işaretler">
+            <label><input type="checkbox" data-mod="ozgul" checked><span class="sw ozgul"></span>Somutluk</label>
+            <label><input type="checkbox" data-mod="dolgu" checked><span class="sw dolgu"></span>Kalıp ifade</label>
+            <label><input type="checkbox" data-mod="ritim" checked><span class="sw ritim"></span>Ritim</label>
+          </div>
+        </div>
+        <article id="doc" aria-label="İşaretlenmiş metin"></article>
+      </div>
+    </section>
+
+    <aside class="side" id="side" aria-live="polite"></aside>
+  </main>
+
+  <details class="honest">
+    <summary>Yazı Koçu neden dedektör değil?</summary>
+    <div style="margin-top:10px;line-height:1.65">
+      <p>Önce Türkçe ve İngilizce'de yapay zekâ metni tespit eden bir araç yapmayı denedik. Gerçek sohbet botu metinleri üzerinde ölçtüğümüzde, resmi ve akademik Türkçe yazıda yöntemlerin gerçek insan yazısını yapay zekâ metninden güvenilir biçimde ayıramadığını gördük. Düzgün yazan bir öğrenciyi haksız yere işaretleme riski, böyle bir aracı yayımlamamız için fazla büyüktü.</p>
+      <p>Bu çalışmadan çıkan faydalı bulguyu aracımıza çevirdik: somut, isim, tarih ve rakamla desteklenmiş yazı daha ikna edicidir. Yazı Koçu metnini kimin yazdığına bakmaz. Paragraflarının somutluğuna, kalıplaşmış ifadelere ve cümle ritmine bakar, nerede iyileştirebileceğini gösterir. Metnin tarayıcından dışarı çıkmaz. Sonuçlar öneridir, hüküm değildir.</p>
+      <ul>
+        <li>Yalnızca yazım özelliklerine bakar: somut dayanak (isim, tarih, rakam, kaynak), sık kullanılan kalıplar ve cümle ritmi.</li>
+        <li>Metnin yapay zekâ ya da insan tarafından yazıldığı hakkında hiçbir şey söylemez. İyi yazan bir insan da uyarı alabilir.</li>
+        <li>Öneriler kural tabanlıdır ve yanılabilir. Metni sen değiştirirsin, araç hiçbir şeyi otomatik yeniden yazmaz.</li>
+        <li>Hiçbir metin sunucuya gönderilmez, tüm çözümleme tamamen bu sayfada çalışır.</li>
+      </ul>
+    </div>
+  </details>
+</div>
+
+<script id="core">
+/* ============================== ÇEKİRDEK (DOM yok, test edilebilir) ============================== */
+(function (root) {
+'use strict';
+const R = String.raw;
+
+/* Sözlükler. MVP'de satır içi: tek dosya olarak file:// altında da çalışsın diye. JSON'a taşımak için
+   SOZLUK nesnesi olduğu gibi bir dosyaya yazılıp fetch ile okunabilir. */
+const SOZLUK = {
+  tr: {
+    months: ['ocak','şubat','mart','nisan','mayıs','haziran','temmuz','ağustos','eylül','ekim','kasım','aralık'],
+    abbr: ['dr','prof','doç','yrd','av','sn','vb','vs','vd','örn','bkz','yy','müh','uzm','op','no','ss','bk','krş','çev','ed','haz','yay','age','mö','ms','tc','sy','öğr','gör','arş','dç','hz','st','tel','mah','cad','sok','apt','ltd','şti','aş','san','tic','ort','maks','kuv','mzk','snf','slh'],
+    vague: [
+      {id:'nicelik', re:R`birçok|bir\s+çok|pek\s+çok|çeşitli|bir\s+dizi|çok\s+sayıda|bir\s+takım|farklı\s+(?:alan|faktör|yöntem|boyut|açı)\w*`,
+       msg:'Belirsiz nicelik', tip:'Kaç tane ya da hangileri? Bir sayı veya iki somut örnek verebilirsin.'},
+      {id:'atif', re:R`araştırmalar\s+(?:göstermektedir|gösteriyor|göstermiştir|gösterir)|yapılan\s+(?:çalışmalar|araştırmalar)\w*|uzmanlara\s+göre|uzmanlar\s+(?:belirtmektedir|ifade\s+etmektedir)|birçok\s+araştırmacı|bazı\s+(?:araştırmacılar|uzmanlar|çalışmalar)\w*`,
+       msg:'Kaynağı belirsiz atıf', tip:'Hangi araştırma ya da hangi uzman? Ad, yıl veya kaynak ekleyebilirsin.'},
+      {id:'zaman', re:R`son\s+yıllarda|günümüzde|günümüz\s+dünyasında|geçmişten\s+günümüze|her\s+geçen\s+gün|gün\s+geçtikçe|tarih\s+boyunca|çağımızda`,
+       msg:'Belirsiz zaman ifadesi', tip:'Hangi dönem? Bir yıl ya da yıl aralığı yazabilirsin.'}
+    ],
+    filler: [
+      {id:'rol', kind:'klise', re:R`önemli\s+bir\s+(?:rol|yer)\s+(?:oynamaktadır|oynar|oynuyor|oynamıştır|oynayacaktır|tutmaktadır)`},
+      {id:'onem', kind:'klise', re:R`büyük\s+(?:bir\s+)?önem\s+(?:taşımaktadır|taşır|taşıyor|arz\s+etmektedir)|önem\s+arz\s+et\w*|kritik\s+(?:bir\s+)?öneme\s+sahip\w*`},
+      {id:'dikkat', kind:'klise', re:R`dikkat\s+çekmektedir|göz\s+ardı\s+edilmemelidir|göz\s+ardı\s+edilemez|unutulmamalıdır(?:\s+ki)?|vurgulanmalıdır|belirtilmelidir(?:\s+ki)?|şunu\s+belirtmek\s+gerekir(?:\s+ki)?`},
+      {id:'mumkun', kind:'klise', re:R`söylemek\s+mümkündür|ifade\s+etmek\s+mümkündür|söylenebilir\s+ki|hiç\s+şüphesiz|şüphesiz\s+ki`},
+      {id:'alan', kind:'klise', re:R`hayatımızın\s+her\s+alanında|her\s+alanda|vazgeçilmez\s+(?:bir\s+)?(?:unsur|parça|rol)\w*|bütüncül\s+bir\s+yaklaşım|kapsamlı\s+bir\s+şekilde|hızla\s+gelişen|sürekli\s+değişen|giderek\s+önem\s+kazan\w*|dijital\s+çağ`},
+      {id:'sonuc', kind:'gecis', re:R`sonuç\s+olarak|sonuç\s+itibarıyla`},
+      {id:'baglam', kind:'gecis', re:R`bu\s+bağlamda|bu\s+doğrultuda|bu\s+çerçevede|bu\s+kapsamda`},
+      {id:'birlikte', kind:'gecis', re:R`bununla\s+birlikte|öte\s+yandan|diğer\s+taraftan`},
+      {id:'ayrica', kind:'gecis', re:R`ayrıca|dahası|ilaveten|ek\s+olarak`},
+      {id:'ozetle', kind:'gecis', re:R`özetle|kısacası|genel\s+olarak`},
+      {id:'dolayisiyla', kind:'gecis', re:R`dolayısıyla|bu\s+nedenle|bu\s+sebeple`}
+    ]
+  },
+  en: {
+    months: ['january','february','march','april','may','june','july','august','september','october','november','december'],
+    abbr: ['dr','mr','mrs','ms','prof','sr','jr','st','vs','etc','fig','no','eg','ie','al','inc','ltd','co'],
+    vague: [
+      {id:'nicelik', re:R`numerous|a\s+variety\s+of|a\s+number\s+of|a\s+wide\s+range\s+of|various|countless|many\s+(?:experts|people|researchers|studies)`,
+       msg:'Vague quantity', tip:'How many, or which ones? Give a number or two concrete examples.'},
+      {id:'atif', re:R`studies\s+(?:show|have\s+shown|suggest)|experts\s+(?:say|believe|agree)|research\s+(?:shows|suggests|indicates)`,
+       msg:'Unsourced claim', tip:'Which study or expert? Add a name, a year or a source.'},
+      {id:'zaman', re:R`in\s+recent\s+years|throughout\s+history|these\s+days|nowadays|in\s+today's\s+(?:world|society|age)`,
+       msg:'Vague time reference', tip:'Which period? Give a year or a range.'}
+    ],
+    filler: [
+      {id:'rol', kind:'klise', re:R`plays?\s+an?\s+(?:crucial|vital|pivotal|significant|key|important)\s+role`},
+      {id:'note', kind:'klise', re:R`it\s+is\s+(?:important|worth|crucial)\s+to\s+(?:note|mention|highlight)(?:\s+that)?`},
+      {id:'realm', kind:'klise', re:R`in\s+the\s+realm\s+of|a\s+testament\s+to|delves?\s+into|rapidly\s+evolving|ever-(?:evolving|changing)|cannot\s+be\s+overstated|navigate\s+the\s+complexities`},
+      {id:'concl', kind:'gecis', re:R`in\s+conclusion|in\s+summary|to\s+sum\s+up|overall`},
+      {id:'furth', kind:'gecis', re:R`furthermore|moreover|additionally|in\s+addition`},
+      {id:'other', kind:'gecis', re:R`on\s+the\s+other\s+hand|as\s+a\s+result|consequently`}
+    ]
+  }
+};
+
+const SENS = {
+  rahat:  {minWords:40, dens:0.8, cv:0.10, long:55, trans:4.0},
+  normal: {minWords:35, dens:1.5, cv:0.15, long:45, trans:3.0},
+  siki:   {minWords:25, dens:2.5, cv:0.20, long:38, trans:2.2}
+};
+
+/* ---------- Yardımcılar ---------- */
+function lower(s, lang) {          // uzunluğu korur, böylece ofsetler tutar (İ/ı dahil)
+  let o = '';
+  for (const ch of s) {
+    let l;
+    if (lang === 'tr' && ch === 'I') l = 'ı';
+    else if (lang === 'tr' && ch === 'İ') l = 'i';
+    else l = ch.toLowerCase();
+    if (l.length !== ch.length) l = ch;
+    if (ch === '\u2019') l = "'";
+    o += l;
+  }
+  return o;
+}
+function detectLang(t) {
+  const words = t.match(/\p{L}+/gu) || [];
+  const trSet = new Set(['ve','bir','bu','için','ile','olarak','da','de','ki','çok','daha','gibi','ancak','ise','olan','en','her','ama','veya']);
+  const enSet = new Set(['the','and','of','to','is','in','that','for','with','as','are','this','by','it','be','on','was','which']);
+  let a = 0, b = 0;
+  for (const w of words) {
+    if (trSet.has(lower(w, 'tr'))) a++;
+    if (enSet.has(w.toLowerCase())) b++;
+  }
+  const tc = (t.match(/[çğıöşüÇĞİÖŞÜ]/g) || []).length;
+  return (a + tc / 3) >= b ? 'tr' : 'en';
+}
+function splitParagraphs(text) {
+  const out = []; const re = /[^\n]+/g; let m;
+  while ((m = re.exec(text))) {
+    const raw = m[0]; const lead = raw.length - raw.trimStart().length; const t = raw.trim();
+    if (t) out.push({start: m.index + lead, end: m.index + lead + t.length});
+  }
+  return out;
+}
+function cutSentences(par, lenient, lang, D) {
+  const res = []; let s = 0; let m;
+  const re = /[.!?…]+["'"')»\]]*(?=\s|$)/g;
+  while ((m = re.exec(par))) {
+    const e = m.index + m[0].length;
+    if (e >= par.length) break;
+    const rest = par.slice(e);
+    const nm = rest.match(/^\s+["'"'(\[«]*(\p{L}|\p{N})/u);
+    if (!nm) continue;
+    const next = nm[1];
+    let ok = lenient ? true : /\p{Lu}/u.test(next);
+    const onlyDot = m[0].replace(/[^.!?…]/g, '') === '.';
+    if (ok && onlyDot) {
+      const wm = par.slice(0, m.index).match(/([\p{L}\p{N}][\p{L}\p{N}.]*)$/u);
+      const w = wm ? wm[1] : '';
+      const wl = lower(w, lang).replace(/\./g, '');
+      const wd = lower(w, lang);
+      if (D.abbr.includes(wl) || D.abbr.includes(wd)) ok = false;
+      else if (/^\p{L}$/u.test(w)) ok = false;
+      else if (/^\d+$/.test(w) && /\p{Ll}/u.test(next)) ok = false;
+    }
+    if (ok) { res.push([s, e]); s = e + rest.match(/^\s+/)[0].length; }
+  }
+  if (s < par.length) res.push([s, par.length]);
+  return res;
+}
+function splitSentences(text, p, lang, D) {
+  const par = text.slice(p.start, p.end);
+  let cuts = cutSentences(par, false, lang, D);
+  if (cuts.length <= 1) {
+    const len = cutSentences(par, true, lang, D);
+    if (len.length > cuts.length) cuts = len;
+  }
+  return cuts.map(([s, e]) => ({s: p.start + s, e: p.start + e}));
+}
+const TOK = /\p{N}+(?:[.,]\p{N}+)*(?:['']\p{L}+)?|\p{L}[\p{L}\p{N}]*(?:['']\p{L}+)*/gu;
+function tokens(str, base) {
+  const out = [];
+  for (const m of str.matchAll(TOK)) out.push({t: m[0], s: base + m.index, e: base + m.index + m[0].length});
+  return out;
+}
+function findPhrases(low, src, from, to) {
+  const pl = low.slice(from, to);
+  const re = new RegExp('(^|[^\\p{L}\\p{N}])(' + src + ')(?![\\p{L}\\p{N}])', 'gu');
+  const out = []; let m;
+  while ((m = re.exec(pl))) {
+    const s = m.index + m[1].length, e = s + m[2].length;
+    out.push({s: from + s, e: from + e});
+    re.lastIndex = Math.max(re.lastIndex, e);
+    if (m[0].length === 0) re.lastIndex++;
+  }
+  return out;
+}
+function dedupe(list) {
+  list.sort((a, b) => a.s - b.s || (b.e - b.s) - (a.e - a.s));
+  const out = []; let end = -1;
+  for (const x of list) if (x.s >= end) { out.push(x); end = x.e; }
+  return out;
+}
+const mean = a => a.reduce((x, y) => x + y, 0) / a.length;
+const sd = a => { const m = mean(a); return Math.sqrt(mean(a.map(x => (x - m) ** 2))); };
+
+function collectAnchors(p, text, low, lang, D) {
+  const A = []; const ptext = text.slice(p.start, p.end); const pl = low.slice(p.start, p.end);
+  const push = (type, m) => A.push({type, s: p.start + m.index, e: p.start + m.index + m[0].length});
+  for (const m of ptext.matchAll(/\([^()]*\b(?:1[5-9]\d{2}|20\d{2})[a-z]?\b[^()]*\)/g)) push('atıf', m);
+  for (const m of ptext.matchAll(/\[\d+(?:\s*[,–-]\s*\d+)*\]/g)) push('atıf', m);
+  for (const m of ptext.matchAll(/([""„])([^"""„]{12,}?)(["""])/g)) if ((m[2].match(/\p{L}+/gu) || []).length >= 3) push('alıntı', m);
+  const mon = D.months.join('|');
+  for (const m of pl.matchAll(new RegExp('\\b\\d{1,2}\\s+(?:' + mon + ')(?:\\s+\\d{4})?|(?:' + mon + ')\\s+\\d{1,2}(?:,\\s*\\d{4})?', 'gu'))) push('tarih', m);
+  for (const m of pl.matchAll(/\b(?:1\d{3}|20\d{2})\b/g)) push('yıl', m);
+  for (const m of pl.matchAll(/%\s?\d+(?:[.,]\d+)?|\d+(?:[.,]\d+)*\s?%|\b\d{2,}(?:[.,]\d+)*\b|\b\d+[.,]\d+\b|\b\d\s?(?:milyon|milyar|bin|kişi|tl|₺|kg|km|cm|million|billion|thousand|people)\b|(?:yüzde|percent)\s+\d+/gu)) push('sayı', m);
+  // özel isimler: cümle başı olmayan büyük harfli sözcükler ve kısaltmalar
+  const seen = new Set();
+  for (const s of p.sents) s.toks.forEach((tk, i) => {
+    if (!/^\p{Lu}/u.test(tk.t)) return;
+    const plain = tk.t.replace(/[''].*$/, '');
+    if (plain.length < 2) return;
+    if (lang === 'en' && /^I(?:['']|$)/.test(tk.t)) return;
+    const acronym = plain.length >= 2 && plain === plain.toUpperCase() && /\p{Lu}/u.test(plain);
+    if (i === 0 && !acronym) return;
+      const key = lower(plain, lang);
+    if (seen.has(key)) return; seen.add(key);
+    A.push({type: acronym ? 'kısaltma' : 'özel isim', s: tk.s, e: tk.e});
+  });
+  return dedupe(A);
+}
+
+function analyze(raw, opts) {
+  opts = opts || {};
+  const text = String(raw).replace(/\r\n?/g, '\n');
+  const lang = (opts.lang === 'tr' || opts.lang === 'en') ? opts.lang : detectLang(text);
+  const K = SENS[opts.sens] || SENS.normal;
+  const D = SOZLUK[lang];
+  const low = lower(text, lang);
+  const anns = [];
+  const add = a => { a.ranges = a.ranges || [[a.start, a.end]]; anns.push(a); };
+
+  const paras = splitParagraphs(text).map((p, idx) => {
+    const sents = splitSentences(text, p, lang, D).map(s => {
+      const toks = tokens(text.slice(s.s, s.e), s.s);
+      return {s: s.s, e: s.e, toks, words: toks.length};
+    });
+    return Object.assign({}, p, {idx, sents, words: sents.reduce((n, s) => n + s.words, 0)});
+  });
+  const totalWords = paras.reduce((n, p) => n + p.words, 0);
+  const allSents = paras.flatMap(p => p.sents);
+
+  /* ---- 1) Somutluk ---- */
+  const fillerHits = [];
+  for (const p of paras) {
+    p.anchors = collectAnchors(p, text, low, lang, D);
+    p.anchorCount = p.anchors.length;
+    const dens = p.words ? p.anchorCount / p.words * 100 : 0;
+    p.density = dens;
+    if (p.words >= K.minWords) {
+      if (p.anchorCount === 0) {
+        add({mod:'ozgul', sev:'yuksek', block:true, par:p.idx, start:p.start, end:p.end,
+          msg: lang === 'tr' ? 'Bu paragrafta somut dayanak bulunamadı (isim, tarih, rakam, kaynak ya da alıntı).'
+                             : 'No concrete anchor found in this paragraph (name, date, number, source or quote).',
+          tip: lang === 'tr' ? 'İddiayı bir örnekle desteklemeyi dene: bir kişi ya da kurum adı, yıl, sayı ya da kaynak ekle.'
+                             : 'Support the claim with an example: add a name, a year, a number or a source.'});
+      } else if (dens < K.dens && p.words >= 2 * K.minWords) {
+        add({mod:'ozgul', sev:'orta', block:true, par:p.idx, start:p.start, end:p.end,
+          msg: lang === 'tr' ? `Bu paragraf ${p.words} kelime ama yalnızca ${p.anchorCount} somut dayanak içeriyor.`
+                             : `This paragraph has ${p.words} words but only ${p.anchorCount} concrete anchor(s).`,
+          tip: lang === 'tr' ? 'Genel ifadelerin bir kısmını somut bir örnek ya da rakamla değiştirebilirsin.'
+                             : 'Replace some general statements with a concrete example or figure.'});
+      }
+    }
+    // belirsiz ifadeler (satır içi)
+    let vg = [];
+    for (const v of D.vague) for (const h of findPhrases(low, v.re, p.start, p.end)) vg.push(Object.assign({v}, h));
+    vg = dedupe(vg).slice(0, 4);
+    for (const h of vg) add({mod:'ozgul', sev:'dusuk', block:false, par:p.idx, start:h.s, end:h.e, msg:h.v.msg, tip:h.v.tip});
+    // dolgu adayları
+    for (const f of D.filler) for (const h of findPhrases(low, f.re, p.start, p.end)) fillerHits.push({f, par:p.idx, s:h.s, e:h.e});
+  }
+
+  /* ---- 2) Kalıp ifadeler ---- */
+  const marked = new Set();
+  const byId = {};
+  fillerHits.forEach((h, i) => { if (h.f.kind === 'gecis') { const key = low.slice(h.s, h.e).replace(/\s+/g, ' '); (byId[key] = byId[key] || []).push(i); } });
+  fillerHits.forEach((h, i) => {
+    if (h.f.kind === 'klise') {
+      marked.add(i);
+      add({mod:'dolgu', sev:'dusuk', block:false, par:h.par, start:h.s, end:h.e,
+        msg: lang === 'tr' ? 'Sık kullanılan kalıp ifade' : 'Common stock phrase',
+        tip: lang === 'tr' ? 'Bu ifadeyi çıkarıp asıl iddiayı doğrudan yazmayı dene: neyin, nasıl önemli olduğunu söyle.'
+                           : 'Try cutting it and stating the claim directly: say what matters and how.'});
+    }
+  });
+  for (const id in byId) {
+    const idxs = byId[id];
+    if (idxs.length >= 2) idxs.forEach(i => {
+      const h = fillerHits[i]; marked.add(i);
+      add({mod:'dolgu', sev:'orta', block:false, par:h.par, start:h.s, end:h.e,
+        msg: lang === 'tr' ? `Bu geçiş kalıbı metinde ${idxs.length} kez geçiyor.` : `This transition appears ${idxs.length} times.`,
+        tip: lang === 'tr' ? 'Bazılarını çıkar ya da farklı bir bağlayıcı kullan; çoğu zaman geçiş olmadan da akar.'
+                           : 'Cut some or vary the connector; the text often flows without it.'});
+    });
+  }
+  for (const p of paras) {
+    const hs = fillerHits.map((h, i) => ({h, i})).filter(x => x.h.par === p.idx && x.h.f.kind === 'gecis' && !marked.has(x.i));
+    if (p.words >= 30 && hs.length / p.words * 100 > K.trans) hs.forEach(({h, i}) => {
+      marked.add(i);
+      add({mod:'dolgu', sev:'dusuk', block:false, par:h.par, start:h.s, end:h.e,
+        msg: lang === 'tr' ? 'Bu paragrafta çok sayıda geçiş kalıbı var.' : 'Many transition phrases in this paragraph.',
+        tip: lang === 'tr' ? 'Her cümleyi bir bağlayıcıyla açmak yerine bazılarını doğrudan başlat.' : 'Start some sentences directly instead of opening each with a connector.'});
+    });
+  }
+
+  /* ---- 3) Cümle ritmi ---- */
+  for (const p of paras) {
+    const S = p.sents, n = S.length;
+    if (n >= 4) {
+      const lens = S.map(s => s.words);
+      let runs = [];
+      for (let i = 0; i + 4 <= n; i++) {
+        const w = lens.slice(i, i + 4), m = mean(w);
+        if (m >= 5 && sd(w) / m < K.cv) {
+          if (runs.length && i <= runs[runs.length - 1][1]) runs[runs.length - 1][1] = i + 3; else runs.push([i, i + 3]);
+        }
+      }
+      for (const [a, b] of runs) {
+        const m = Math.round(mean(lens.slice(a, b + 1)));
+        add({mod:'ritim', sev:'orta', block:false, par:p.idx, start:S[a].s, end:S[b].e,
+          msg: lang === 'tr' ? `${b - a + 1} cümle üst üste benzer uzunlukta (ortalama ${m} kelime).` : `${b - a + 1} sentences in a row have similar length (about ${m} words).`,
+          tip: lang === 'tr' ? 'Birini kısaltıp birini genişlet, ya da iki cümleyi birleştir; ritim değişsin.' : 'Shorten one and expand another, or merge two; vary the rhythm.'});
+      }
+    }
+    // aynı sözcükle başlayan ardışık cümleler
+    let i = 0;
+    while (i < n) {
+      const first = S[i].toks[0] ? lower(S[i].toks[0].t, lang) : null;
+      let j = i;
+      while (first && j + 1 < n && S[j + 1].toks[0] && lower(S[j + 1].toks[0].t, lang) === first) j++;
+      if (first && j - i + 1 >= 3) {
+        const ranges = []; for (let k = i; k <= j; k++) ranges.push([S[k].toks[0].s, S[k].toks[0].e]);
+        add({mod:'ritim', sev:'dusuk', block:false, par:p.idx, start:ranges[0][0], end:ranges[ranges.length - 1][1], ranges,
+          msg: lang === 'tr' ? `${j - i + 1} cümle üst üste aynı sözcükle başlıyor.` : `${j - i + 1} sentences in a row start with the same word.`,
+          tip: lang === 'tr' ? 'Cümlelerden birini farklı bir öğeyle başlat (zaman, yer, neden gibi).' : 'Open one of them differently (time, place, reason).'});
+      }
+      i = Math.max(j + 1, i + 1);
+    }
+    // çok uzun cümle
+    for (const s of S) if (s.words > K.long) add({mod:'ritim', sev:'dusuk', block:false, par:p.idx, start:s.s, end:s.e,
+      msg: lang === 'tr' ? `Bu cümle ${s.words} kelime.` : `This sentence is ${s.words} words long.`,
+      tip: lang === 'tr' ? 'İki cümleye bölmeyi dene; okuyucu nefes alsın.' : 'Try splitting it in two so the reader can breathe.'});
+  }
+  const notes = [];
+  if (allSents.length >= 8) {
+    const lens = allSents.map(s => s.words), cv = sd(lens) / mean(lens);
+    if (cv < 0.35) notes.push(lang === 'tr'
+      ? `Metin boyunca cümle uzunlukları birbirine yakın (ortalama ${Math.round(mean(lens))} kelime, değişim %${Math.round(cv * 100)}). Kısa ve uzun cümleleri karıştırmak okumayı canlandırır.`
+      : `Sentence lengths stay close throughout (mean ${Math.round(mean(lens))} words, variation ${Math.round(cv * 100)}%). Mixing short and long sentences makes reading livelier.`);
+  }
+  if (totalWords < 40) notes.push(lang === 'tr' ? 'Metin kısa (40 kelimeden az). Sonuçlar bu uzunlukta güvenilir değil.' : 'The text is short (under 40 words); results are unreliable at this length.');
+
+  anns.sort((a, b) => a.ranges[0][0] - b.ranges[0][0] || a.ranges[0][1] - b.ranges[0][1]);
+  anns.forEach((a, i) => { a.id = i + 1; });
+  return {text, lang, paragraphs: paras.map(p => ({idx:p.idx, start:p.start, end:p.end, words:p.words, sentences:p.sents.length, anchorCount:p.anchorCount, density:p.density})),
+          annotations: anns, notes,
+          stats: {words: totalWords, sentences: allSents.length, paragraphs: paras.length, avgSentence: allSents.length ? totalWords / allSents.length : 0}};
+}
+
+root.YK = {analyze, detectLang, SOZLUK, SENS, lower};
+if (typeof module !== 'undefined' && module.exports) module.exports = root.YK;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+
+<script id="ui">
+/* ============================== ARAYÜZ ============================== */
+(function () {
+'use strict';
+const $ = s => document.querySelector(s);
+const input = $('#input'), editView = $('#editView'), resultView = $('#resultView'), doc = $('#doc'), side = $('#side');
+const MODS = {ozgul: 'Somutluk', dolgu: 'Kalıp ifade', ritim: 'Ritim'};
+const SEV = {yuksek: 'öncelik yüksek', orta: 'öncelik orta', dusuk: 'öncelik düşük'};
+const esc = s => s.replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+
+const SAMPLE = `Günümüzde teknoloji hayatımızın her alanında önemli bir rol oynamaktadır. Birçok insan akıllı telefonlar sayesinde bilgiye kolayca ulaşabilmektedir. Bu bağlamda eğitimde de çeşitli yenilikler ortaya çıkmaktadır. Öğrenciler farklı kaynaklara kolayca erişebilmektedir. Öğretmenler yeni yöntemleri kolayca uygulayabilmektedir. Okullar dijital araçları sınıflarda yaygın kullanmaktadır. Aileler çocuklarının gelişimini yakından izleyebilmektedir. Sonuç olarak teknoloji eğitimde büyük önem taşımaktadır.
+
+Milli Eğitim Bakanlığı, 2011 yılında başlattığı FATİH Projesi kapsamında yaklaşık 620 bin tablet bilgisayarı okullara dağıttı. Ancak Ankara'da yapılan bir saha çalışmasında (Yılmaz ve Kaya, 2016) öğretmenlerin yalnızca %38'inin cihazları derslerinde düzenli kullandığı görüldü. Bu fark, teknolojinin kendi başına değil, öğretmen eğitimiyle birlikte anlam kazandığını düşündürüyor.`;
+
+const wc = t => (t.match(/\p{L}[\p{L}\p{N}'']*|\p{N}+/gu) || []).length;
+function updateCount() { $('#count').textContent = wc(input.value) + ' kelime'; }
+input.addEventListener('input', updateCount);
+$('#sample').addEventListener('click', () => { input.value = SAMPLE; updateCount(); showEdit(); });
+$('#clear').addEventListener('click', () => { input.value = ''; updateCount(); showEdit(); renderSide(null); input.focus(); });
+$('#back').addEventListener('click', showEdit);
+$('#analyze').addEventListener('click', run);
+input.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') run(); });
+document.querySelectorAll('.filters input').forEach(cb => cb.addEventListener('change', () => {
+  doc.classList.toggle('off-' + cb.dataset.mod, !cb.checked);
+  document.querySelectorAll('.item[data-mod="' + cb.dataset.mod + '"]').forEach(el => el.classList.toggle('hidden', !cb.checked));
+}));
+
+function showEdit() { resultView.hidden = true; editView.hidden = false; }
+function run() {
+  const text = input.value;
+  if (!text.trim()) { renderSide(null, 'Önce bir metin yapıştır.'); input.focus(); return; }
+  const res = YK.analyze(text, {lang: $('#lang').value, sens: $('#sens').value});
+  renderDoc(res); renderSide(res);
+  editView.hidden = true; resultView.hidden = false;
+  document.querySelectorAll('.filters input').forEach(cb => { cb.checked = true; });
+  doc.className = '';
+  window.scrollTo({top: 0});
+}
+
+function renderDoc(res) {
+  doc.innerHTML = '';
+  const inline = res.annotations.filter(a => !a.block);
+  res.paragraphs.forEach(p => {
+    const el = document.createElement('p'); el.className = 'par'; el.dataset.p = p.idx;
+    const blocks = res.annotations.filter(a => a.block && a.par === p.idx);
+    if (blocks.length) { el.classList.add('par-flag'); el.dataset.a = blocks.map(a => a.id).join(' '); el.title = blocks.map(a => a.msg).join(' '); }
+    const segs = inline.filter(a => a.par === p.idx);
+    const pts = new Set([p.start, p.end]);
+    segs.forEach(a => a.ranges.forEach(([s, e]) => { pts.add(Math.max(p.start, s)); pts.add(Math.min(p.end, e)); }));
+    const xs = [...pts].sort((a, b) => a - b);
+    let html = '';
+    for (let i = 0; i < xs.length - 1; i++) {
+      const s = xs[i], e = xs[i + 1];
+      const act = segs.filter(a => a.ranges.some(([rs, re]) => rs <= s && re >= e));
+      const t = esc(res.text.slice(s, e));
+      if (!act.length) { html += t; continue; }
+      const cls = [...new Set(act.map(a => 'm-' + a.mod))].join(' ');
+      html += `<mark class="${cls}" data-a="${act.map(a => a.id).join(' ')}" title="${esc(act.map(a => MODS[a.mod] + ': ' + a.msg).join(' | '))}">${t}</mark>`;
+    }
+    el.innerHTML = html; doc.appendChild(el);
+  });
+  doc.onclick = onDocClick;
+}
+function onDocClick(e) {
+  const m = e.target.closest('[data-a]'); if (!m) return;
+  const id = m.dataset.a.split(' ')[0];
+  const item = document.querySelector('.item[data-id="' + id + '"]');
+  if (item) { item.scrollIntoView({block: 'center', behavior: 'smooth'}); flash(item); }
+}
+function flash(el) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1400); }
+function focusAnn(id) {
+  const t = doc.querySelector('[data-a~="' + id + '"]'); if (!t) return;
+  t.scrollIntoView({block: 'center', behavior: 'smooth'});
+  doc.querySelectorAll('[data-a~="' + id + '"]').forEach(flash);
+}
+
+function renderSide(res, msg) {
+  if (!res) {
+    side.innerHTML = `<div class="panel"><h2>Nasıl çalışır</h2>
+      <p class="empty">${esc(msg || 'Metnini yapıştırıp "Analiz et" düğmesine bas. Araç üç şeye bakar: paragrafların somut dayanak içerip içermediğine, sık kullanılan kalıp ifadelere ve cümle ritmine. Sonuçlar öneridir, hüküm değil.')}</p></div>`;
+    return;
+  }
+  const st = res.stats;
+  let h = `<div class="panel"><h2>Özet</h2><div class="facts">
+    <div class="fact"><b>${st.words}</b><span>kelime</span></div>
+    <div class="fact"><b>${st.sentences}</b><span>cümle</span></div>
+    <div class="fact"><b>${st.paragraphs}</b><span>paragraf</span></div>
+    <div class="fact"><b>${st.avgSentence.toFixed(1)}</b><span>ortalama cümle uzunluğu</span></div></div>
+    <p class="count" style="margin:8px 0 0">Algılanan dil: ${res.lang === 'tr' ? 'Türkçe' : 'English'}</p></div>`;
+  if (res.notes.length) h += `<div class="panel"><h2>Genel notlar</h2>${res.notes.map(n => `<p class="note">${esc(n)}</p>`).join('')}</div>`;
+  const maxD = 6;
+  h += `<div class="panel"><h2>Paragraf başına somut dayanak</h2><div class="pm">` + res.paragraphs.map(p =>
+    `<button type="button" data-par="${p.idx}" title="Paragrafa git"><span>Paragraf ${p.idx + 1}</span>
+      <span class="bar" aria-hidden="true"><i style="width:${Math.min(100, p.density / maxD * 100)}%"></i></span>
+      <small>${p.anchorCount} dayanak, ${p.words} kelime</small></button>`).join('') + `</div></div>`;
+  if (!res.annotations.length) {
+    h += `<div class="panel"><p class="empty">Bu ayarlarla uyarı çıkmadı. Bu, metnin iyi ya da kötü olduğunu göstermez; yalnızca bu üç kural bir şey yakalamadı.</p></div>`;
+  } else {
+    h += `<div class="panel"><h2>Öneriler (${res.annotations.length})</h2><ul class="list">` + res.annotations.map(a => {
+      const ex = res.text.slice(a.ranges[0][0], Math.min(a.ranges[0][1], a.ranges[0][0] + 90)).replace(/\s+/g, ' ');
+      return `<li class="item" tabindex="0" role="button" data-id="${a.id}" data-mod="${a.mod}">
+        <p class="ex">${esc(ex)}${a.ranges[0][1] - a.ranges[0][0] > 90 ? '…' : ''}</p>
+        <p class="msg">${esc(a.msg)}<span class="chip">${MODS[a.mod]}</span><span class="chip">${SEV[a.sev]}</span></p>
+        <p class="tip">${esc(a.tip)}</p></li>`;
+    }).join('') + `</ul></div>`;
+  }
+  side.innerHTML = h;
+  side.querySelectorAll('.item').forEach(el => {
+    const go = () => focusAnn(el.dataset.id);
+    el.addEventListener('click', go);
+    el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+  });
+  side.querySelectorAll('.pm button').forEach(b => b.addEventListener('click', () => {
+    const p = doc.querySelector('.par[data-p="' + b.dataset.par + '"]'); if (p) { p.scrollIntoView({block: 'center', behavior: 'smooth'}); flash(p); }
+  }));
+}
+renderSide(null);
+})();
+</script>
+</body>
+</html>
